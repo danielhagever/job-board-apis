@@ -322,9 +322,11 @@ If you would rather not keep twenty parsers alive, I run these as hosted Actors 
 Apify, with the paging traps above handled and one output schema across every system:
 
 - [Workday Jobs Scraper](https://apify.com/glitchbound/workday-jobs-scraper): any Workday
-  careers site, by company name or URL.
+  careers site, by company name or URL
+  ([quick start](https://github.com/danielhagever/workday-jobs-scraper)).
 - [Company Career Page Jobs Scraper](https://apify.com/glitchbound/ats-jobs-scraper): a
-  company name or domain in, its open jobs out, across 24 systems.
+  company name or domain in, its open jobs out, across 24 systems
+  ([quick start](https://github.com/danielhagever/company-career-page-scraper)).
 - [Job Listings API](https://apify.com/glitchbound/ats-jobs-search): search one index of
   career-site jobs, refreshed daily.
 - [Job Feed: New and Closed Roles](https://apify.com/glitchbound/ats-jobs-monitor) and
