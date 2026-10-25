@@ -209,6 +209,9 @@ JOB=$(curl -s -X POST "$BASE/jobs" -H "Content-Type: application/json" \
 curl -s "$BASE$JOB" | jq -r '.jobPostingInfo.jobDescription' | head -c 400
 ```
 
+A quick start for the hosted version, by company name instead of URL, with curl, Python and
+MCP: [**workday-jobs-scraper**](https://github.com/danielhagever/workday-jobs-scraper).
+
 ## Oracle Recruiting Cloud
 
 Oracle's "Candidate Experience" careers sites live at
