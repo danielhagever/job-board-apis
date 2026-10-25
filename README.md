@@ -1,4 +1,4 @@
-# Job board APIs: public job posting endpoints for 18 applicant tracking systems
+# Job board APIs: public job posting endpoints for 17 applicant tracking systems
 
 Most company careers pages are not custom software. They are a board hosted by an
 applicant tracking system (Greenhouse, Lever, Workday, Oracle Recruiting, ...), and the
@@ -15,10 +15,11 @@ can check whether anything has moved since.
 - The endpoints: [Greenhouse](#greenhouse) · [Lever](#lever) · [Ashby](#ashby) ·
   [Recruitee](#recruitee) · [Workable](#workable) · [Rippling](#rippling) ·
   [Personio](#personio) · [Breezy HR](#breezy-hr) · [Teamtailor](#teamtailor) ·
-  [BambooHR](#bamboohr) · [SmartRecruiters](#smartrecruiters) · [Workday](#workday) ·
+  [BambooHR](#bamboohr) · [Workday](#workday) ·
   [Oracle Recruiting Cloud](#oracle-recruiting-cloud) · [ADP](#adp-myjobsadpcom) ·
   [Phenom](#phenom) · [Jibe](#jibe) · [Eightfold](#eightfold) · [Amazon](#amazon)
-- [Systems with no JSON endpoint](#systems-with-no-json-endpoint)
+- [Systems with no JSON endpoint](#systems-with-no-json-endpoint) ·
+  [Closed by robots.txt: SmartRecruiters](#closed-by-robotstxt-smartrecruiters)
 - [Being a good citizen](#being-a-good-citizen)
 - [Hosted versions](#hosted-versions)
 
@@ -36,7 +37,6 @@ can check whether anything has moved since.
 | Breezy HR | `GET {token}.breezy.hr/json` | whole board | none | no description |
 | Teamtailor | `GET {token}.teamtailor.com/jobs.json` | 100 | `next_url` | JSON Feed with schema.org `JobPosting` |
 | BambooHR | `GET {token}.bamboohr.com/careers/list` | whole board | none | no posted date |
-| SmartRecruiters | `GET api.smartrecruiters.com/v1/companies/{id}/postings` | 100 max | `offset` | unknown company answers 200, empty |
 | Workday | `POST {host}.{wdN}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs` | 20 max | `offset` | `total` is only real on page one |
 | Oracle Recruiting Cloud | `GET {host}/hcmRestApi/resources/latest/recruitingCEJobRequisitions` | 200 | `offset` | nothing past 10,000 per query |
 | ADP | `GET myjobs.adp.com/public/staffing/v1/job-requisitions` | `$top` | `$skip` | needs an `orgoid` header |
@@ -62,7 +62,6 @@ any job, and read the host:
 | `thirdchannel-inc.breezy.hr` | Breezy HR | `thirdchannel-inc` |
 | `polestar.teamtailor.com/jobs` | Teamtailor | `polestar` |
 | `401auto.bamboohr.com/careers` | BambooHR | `401auto` |
-| `careers.smartrecruiters.com/BoschGroup` | SmartRecruiters | `BoschGroup` |
 | `nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite` | Workday | host `nvidia`, data centre `wd5`, site `NVIDIAExternalCareerSite` |
 | `ejwl.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX` | Oracle | host `ejwl.fa.us2.oraclecloud.com`, site `CX` |
 | `myjobs.adp.com/pbna` | ADP | `pbna` |
@@ -167,18 +166,6 @@ curl -s "https://401auto.bamboohr.com/careers/list" | jq '.meta.totalCount, (.re
   first-seen date.
 - A tenant that does not exist redirects to bamboohr.com, which answers 200 with HTML, so
   check that the body parses as JSON.
-
-## SmartRecruiters
-
-```bash
-curl -s "https://api.smartrecruiters.com/v1/companies/BoschGroup/postings?limit=100&offset=0" \
-  | jq '.totalFound, (.content | length)'
-```
-
-- `limit` tops out at 100. Asking for `limit=1000` still returns 100 and echoes
-  `limit: 100`, while `totalFound` says 5,087. Page with `offset` or you silently keep 2%.
-- A company that does not exist answers `200` with `totalFound: 0`, which looks exactly
-  like a real company with nothing open. Treat an empty answer as "unknown", not "zero".
 
 ## Workday
 
@@ -315,6 +302,13 @@ These are readable too, but from the HTML the careers page serves:
   needs a portal id read from the page first.
 - **BrassRing** and **Radancy (TalentBrew)**: per-site, through their search pages or
   sitemaps.
+
+## Closed by robots.txt: SmartRecruiters
+
+SmartRecruiters publishes a postings API (`api.smartrecruiters.com/v1/companies/{id}/postings`),
+but the host's robots.txt allows it to `LinkedInBot` and disallows everyone else, so it is
+left out here. If you are a SmartRecruiters customer reading your own postings, their
+developer documentation is the place to start.
 
 ## Being a good citizen
 

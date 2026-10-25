@@ -83,11 +83,6 @@ def adp():
     return f"count {d['count']}, {rows(len(d['jobRequisitions']))}"
 
 
-def smartrecruiters():
-    d = get_json("https://api.smartrecruiters.com/v1/companies/BoschGroup/postings?limit=1000")
-    return f"asked 1000, got {len(d['content'])} of {d['totalFound']}"
-
-
 CHECKS = [
     ("Greenhouse", lambda: rows(len(get_json(
         "https://boards-api.greenhouse.io/v1/boards/figma/jobs")["jobs"]))),
@@ -109,7 +104,6 @@ CHECKS = [
         "https://anicuraglobal.teamtailor.com/jobs.json")["items"]))),
     ("BambooHR", lambda: rows(len(get_json(
         "https://401auto.bamboohr.com/careers/list")["result"]))),
-    ("SmartRecruiters", smartrecruiters),
     ("Workday", lambda: rows(len(get_json(
         WORKDAY, {"limit": 20, "offset": 0, "searchText": "", "appliedFacets": {}})["jobPostings"]))),
     ("Workday limit", workday_limit),
