@@ -254,6 +254,9 @@ curl -s -X POST "https://careers.rtx.com/widgets" -H "Content-Type: application/
 ```
 
 - 100 a page, paged by `from` (RTX: 4,767 jobs).
+- careers.rtx.com answered **403 to a cloud server** (a GitHub Actions runner) in the same
+  hour it answered this from a home connection. If it works on your laptop and fails in
+  production, that is why.
 - Phenom often sits in front of a Workday board, so the same jobs may be readable there.
 
 ## Jibe

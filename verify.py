@@ -7,6 +7,7 @@ asks each host for one or two things and takes about half a minute.
     python3 verify.py
 """
 import json
+import os
 import sys
 import time
 import urllib.error
@@ -28,6 +29,10 @@ ORACLE = ("https://ejwl.fa.us2.oraclecloud.com/hcmRestApi/resources/latest/"
           "recruitingCEJobRequisitions?onlyData=true&expand=requisitionList.secondaryLocations"
           "&finder=findReqs;siteNumber=CX,limit={limit},offset={offset},sortBy=POSTING_DATES_DESC")
 ADP = "https://myjobs.adp.com/public/staffing/v1"
+# Hosts measured to refuse cloud addresses while answering a home connection:
+# careers.rtx.com gave a GitHub Actions runner 403 on 2026-10-25 and a residential
+# line 100 rows the same hour. In CI a 403 from these is a skip, not a failure.
+CLOUD_BLOCKED = {"Phenom"}
 
 
 def fetch(url, body=None, headers=None):
@@ -126,16 +131,22 @@ CHECKS = [
 
 
 def main():
-    failed = 0
+    failed = skipped = 0
+    in_ci = bool(os.environ.get("CI"))
     for name, check in CHECKS:
         try:
             print(f"PASS  {name:16} {check()}")
         except Exception as e:  # report every failure and keep going
+            if in_ci and name in CLOUD_BLOCKED and "HTTP 403" in str(e):
+                print(f"SKIP  {name:16} 403 to a cloud address; answers from a home connection")
+                skipped += 1
+                continue
             failed += 1
             print(f"FAIL  {name:16} {type(e).__name__}: {e}")
         sys.stdout.flush()
         time.sleep(1)
-    print(f"\n{len(CHECKS) - failed} of {len(CHECKS)} pass")
+    passed = len(CHECKS) - failed - skipped
+    print(f"\n{passed} of {len(CHECKS)} pass" + (f", {skipped} skipped" if skipped else ""))
     return 1 if failed else 0
 
 
