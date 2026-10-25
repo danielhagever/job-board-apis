@@ -1,5 +1,7 @@
 # Job board APIs: public job posting endpoints for 17 applicant tracking systems
 
+[![verify endpoints](https://github.com/danielhagever/job-board-apis/actions/workflows/verify.yml/badge.svg)](https://github.com/danielhagever/job-board-apis/actions/workflows/verify.yml)
+
 Most company careers pages are not custom software. They are a board hosted by an
 applicant tracking system (Greenhouse, Lever, Workday, Oracle Recruiting, ...), and the
 page loads its openings from a public endpoint that needs no key. This repo lists that
@@ -7,8 +9,9 @@ endpoint for each system, with a `curl` you can paste, the paging quirk that bit
 what the rows carry.
 
 Every example was run on **2026-10-25**, and the counts quoted are what came back that
-day. [`verify.py`](verify.py) reruns all of them (Python standard library only), so you
-can check whether anything has moved since.
+day. [`verify.py`](verify.py) reruns all of them (Python standard library only), and a
+weekly GitHub Action runs it too: the badge above says whether every endpoint still
+answers the way this page says.
 
 - [At a glance](#at-a-glance)
 - [Finding a company's token](#finding-a-companys-token)

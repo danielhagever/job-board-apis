@@ -1,0 +1,23 @@
+name: verify endpoints
+
+# Reruns every example in README.md once a week, so the badge says whether the
+# endpoints still answer the way the README says. One request per check, one
+# second apart: about twenty requests in total, to as many hosts.
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python3 verify.py
