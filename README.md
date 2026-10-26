@@ -334,7 +334,8 @@ Apify, with the paging traps above handled and one output schema across every sy
   company name or domain in, its open jobs out, across 24 systems
   ([quick start](https://github.com/danielhagever/company-career-page-scraper)).
 - [Job Listings API](https://apify.com/glitchbound/ats-jobs-search): search one index of
-  career-site jobs, refreshed daily.
+  career-site jobs, refreshed daily
+  ([quick start](https://github.com/danielhagever/job-listings-api)).
 - [Job Feed: New and Closed Roles](https://apify.com/glitchbound/ats-jobs-monitor) and
   [Hiring Tech Stack Detector](https://apify.com/glitchbound/ats-finder) (which ATS a
   company uses).
