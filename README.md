@@ -295,6 +295,8 @@ curl -s "https://amazon.jobs/en/search.json?offset=0&result_limit=100&sort=recen
 ```
 
 - 100 a page, each with `description` and `posted_date`.
+- More traps (`result_limit` over 100 returns nothing, `hits` stops at 10,000, `loc_query`
+  filters nothing), measured: [Amazon jobs API](https://dev.to/glitchbound/amazon-jobs-api-amazonjobs-search-as-json-and-five-traps-between-you-and-all-21000-openings-1mig).
 
 ## Systems with no JSON endpoint
 
@@ -380,6 +382,7 @@ such as [Workday](https://glitchbound-jobs.pages.dev/workday/),
 [Oracle](https://glitchbound-jobs.pages.dev/oracle/).
 
 Longer write-ups:
+[Amazon jobs API, five traps](https://dev.to/glitchbound/amazon-jobs-api-amazonjobs-search-as-json-and-five-traps-between-you-and-all-21000-openings-1mig) ·
 [Oracle Recruiting Cloud, step by step](https://dev.to/glitchbound/oracle-recruiting-cloud-jobs-api-marriott-kroger-and-jpmorgan-careers-sites-as-json-4b50) ·
 [the seven traps on this page, as an article](https://dev.to/glitchbound/public-job-board-apis-17-applicant-tracking-systems-that-publish-every-opening-as-json-cn6) ·
 [every posting from any Workday careers site](https://dev.to/glitchbound/workday-jobs-scraper-every-posting-from-any-workday-careers-site-by-company-name-8bd) ·
