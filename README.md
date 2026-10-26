@@ -221,6 +221,9 @@ curl -s "https://ejwl.fa.us2.oraclecloud.com/hcmRestApi/resources/latest/recruit
   List a host's real sites first:
   `GET https://{host}/hcmRestApi/resources/latest/recruitingCESites?onlyData=true&limit=200`
 
+The whole walk for Oracle, with the detail call and the category split:
+[Oracle Recruiting Cloud jobs API](https://dev.to/glitchbound/oracle-recruiting-cloud-jobs-api-marriott-kroger-and-jpmorgan-careers-sites-as-json-4b50).
+
 ## ADP (myjobs.adp.com)
 
 Two calls. The first gives the employer's name and the `orgoid` the job list requires.
@@ -377,6 +380,7 @@ such as [Workday](https://glitchbound-jobs.pages.dev/workday/),
 [Oracle](https://glitchbound-jobs.pages.dev/oracle/).
 
 Longer write-ups:
+[Oracle Recruiting Cloud, step by step](https://dev.to/glitchbound/oracle-recruiting-cloud-jobs-api-marriott-kroger-and-jpmorgan-careers-sites-as-json-4b50) ·
 [the seven traps on this page, as an article](https://dev.to/glitchbound/public-job-board-apis-17-applicant-tracking-systems-that-publish-every-opening-as-json-cn6) ·
 [every posting from any Workday careers site](https://dev.to/glitchbound/workday-jobs-scraper-every-posting-from-any-workday-careers-site-by-company-name-8bd) ·
 [every open job from any company, by name or domain](https://dev.to/glitchbound/company-career-page-scraper-every-open-job-from-any-company-by-name-or-domain-ede) ·
