@@ -377,6 +377,7 @@ such as [Workday](https://glitchbound-jobs.pages.dev/workday/),
 [Oracle](https://glitchbound-jobs.pages.dev/oracle/).
 
 Longer write-ups:
+[the seven traps on this page, as an article](https://dev.to/glitchbound/public-job-board-apis-17-applicant-tracking-systems-that-publish-every-opening-as-json-cn6) ·
 [every posting from any Workday careers site](https://dev.to/glitchbound/workday-jobs-scraper-every-posting-from-any-workday-careers-site-by-company-name-8bd) ·
 [every open job from any company, by name or domain](https://dev.to/glitchbound/company-career-page-scraper-every-open-job-from-any-company-by-name-or-domain-ede) ·
 [searching every Greenhouse, Ashby and Workable board at once](https://dev.to/glitchbound/search-every-greenhouse-ashby-and-workable-job-board-at-once-without-a-company-list-o96)
