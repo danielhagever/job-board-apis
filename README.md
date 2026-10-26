@@ -369,6 +369,12 @@ Apify, with the paging traps above handled and one output schema across every sy
   [Personio](https://apify.com/glitchbound/personio-jobs-api) ·
   [Rippling](https://apify.com/glitchbound/rippling-jobs-api)
 
+Live counts per system, rebuilt nightly from the same harvest:
+[glitchbound-jobs.pages.dev](https://glitchbound-jobs.pages.dev/), with a page per system
+such as [Workday](https://glitchbound-jobs.pages.dev/workday/),
+[Greenhouse](https://glitchbound-jobs.pages.dev/greenhouse/) and
+[Oracle](https://glitchbound-jobs.pages.dev/oracle/).
+
 Longer write-ups:
 [every posting from any Workday careers site](https://dev.to/glitchbound/workday-jobs-scraper-every-posting-from-any-workday-careers-site-by-company-name-8bd) ·
 [every open job from any company, by name or domain](https://dev.to/glitchbound/company-career-page-scraper-every-open-job-from-any-company-by-name-or-domain-ede) ·
