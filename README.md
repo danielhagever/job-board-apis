@@ -302,13 +302,15 @@ curl -s "https://amazon.jobs/en/search.json?offset=0&result_limit=100&sort=recen
 - 100 a page, each with `description` and `posted_date`.
 - More traps (`result_limit` over 100 returns nothing, `hits` stops at 10,000, `loc_query`
   filters nothing), measured: [Amazon jobs API](https://dev.to/glitchbound/amazon-jobs-api-amazonjobs-search-as-json-and-five-traps-between-you-and-all-21000-openings-1mig).
+- A quick start that reads all of it by title or place: [amazon-jobs-api](https://github.com/danielhagever/amazon-jobs-api).
 
 ## Systems with no JSON endpoint
 
 These are readable too, but from the HTML the careers page serves:
 
-- **iCIMS**: `{name}.icims.com/jobs/search?ss=1`, a server-rendered list. Check each
-  portal's robots.txt.
+- **iCIMS**: `{name}.icims.com/jobs/search?ss=1&in_iframe=1`, a server-rendered list (without
+  `in_iframe=1` it is an empty wrapper). Check each portal's robots.txt. Measured on
+  BrightSpring and Concentra: [iCIMS careers portals](https://dev.to/glitchbound/icims-jobs-api-brightspring-and-concentra-careers-portals-behind-one-iframe-flag-3eal).
 - **SAP SuccessFactors**: see [below](#sap-successfactors).
 - **Paylocity**: the board page at `recruiting.paylocity.com/recruiting/jobs/All/{guid}`
   carries every job in a `window.pageData` object.
@@ -335,7 +337,8 @@ curl -s "https://careers.ey.com/search-jobs/?q=&startrow=0" | grep -o 'of <b>[0-
 - `q` searches the words and `locationsearch` the place: EY "consultant" was 7,720 jobs,
   with `locationsearch=London` 319.
 - Dates are text when a site prints them at all (Nucor: `Oct 26, 2026`; EY: none), and
-  `jobs.sap.com` answered a plain `curl` with 403.
+  `jobs.sap.com` answered a plain `curl` with 403. The write-up:
+  [SAP SuccessFactors jobs API](https://dev.to/glitchbound/sap-successfactors-jobs-api-ey-and-nucor-careers-sites-one-html-table-at-a-time-58a8).
 
 ## Closed by robots.txt: SmartRecruiters
 
@@ -405,6 +408,8 @@ such as [Workday](https://glitchbound-jobs.pages.dev/workday/),
 [Oracle](https://glitchbound-jobs.pages.dev/oracle/).
 
 Longer write-ups:
+[SAP SuccessFactors, an HTML table at a time](https://dev.to/glitchbound/sap-successfactors-jobs-api-ey-and-nucor-careers-sites-one-html-table-at-a-time-58a8) ·
+[iCIMS, behind one iframe flag](https://dev.to/glitchbound/icims-jobs-api-brightspring-and-concentra-careers-portals-behind-one-iframe-flag-3eal) ·
 [Costco, FedEx and H&R Block on Jibe](https://dev.to/glitchbound/costco-fedex-and-hr-block-jobs-api-the-jibe-careers-search-at-five-seconds-a-page-2ldd) ·
 [Microsoft, Starbucks and Qualcomm on Eightfold](https://dev.to/glitchbound/microsoft-starbucks-and-qualcomm-jobs-api-the-eightfold-careers-search-ten-rows-at-a-time-2g4o) ·
 [Amazon jobs API, five traps](https://dev.to/glitchbound/amazon-jobs-api-amazonjobs-search-as-json-and-five-traps-between-you-and-all-21000-openings-1mig) ·
