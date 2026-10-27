@@ -192,11 +192,13 @@ curl -s -X POST "https://nvidia.wd5.myworkdayjobs.com/wday/cxs/nvidia/NVIDIAExte
 - `total` is real only on the first page: NVIDIA said 2,000 at offset 0 and 0 at
   offset 20. Keep the first page's number. A loop written as `while offset < total` stops
   after one page and reports no error.
-- `total` stops at 2,000 and past offset 2,000 the search answers page one again, at every
-  offset (Walmart up to 40,000, NVIDIA at 2,000, 2026-10-27), so "page until empty" never
-  ends. Walmart's own facets counted 20,661 jobs: send a facet value back in
-  `appliedFacets` (a state, a country) to cut the board into slices under 2,000, and
-  dedupe on `externalPath`.
+- On some sites `total` stops at 2,000 and past offset 2,000 the search answers page one
+  again, at every offset (Walmart up to 40,000, NVIDIA at 2,000, 2026-10-27), so "page
+  until empty" never ends. Walmart's own facets counted 20,725 jobs: send a facet value
+  back in `appliedFacets` (a state, a country) to cut the board into slices under 2,000,
+  and dedupe on `externalPath`. Not every site caps: Bank of America's `us-emplsv` said
+  3,027 and paged past 2,000 normally, so treat exactly 2,000 as the cap. Measured on
+  Walmart, Wells Fargo and Bank of America: [Workday past the 2,000 cap](https://dev.to/glitchbound/walmart-wells-fargo-and-bank-of-america-jobs-api-workday-careers-sites-past-the-2000-cap-28ff).
 - List rows carry `title`, `externalPath`, `locationsText`, `postedOn` (text such as
   "Posted Today", not a date) and `bulletFields`. The description is one more GET per
   job, on the same base plus `externalPath`:
@@ -373,11 +375,12 @@ curl -s "https://careers.unitedhealthgroup.com/sitemap.xml" \
 ```
 
 - Job URLs are `/job/<city>/<title>/<org>/<id>`, so a title can be picked out of the sitemap
-  before any page is fetched (Kaiser Permanente: 422 of 3,181 with "nurse", 2026-10-27).
+  before any page is fetched (Kaiser Permanente: 424 of 3,191 with "nurse", 2026-10-27).
 - Each job page carries one schema.org `JobPosting` in `application/ld+json`. One request
-  per job; UnitedHealth's pages ran 175-292 KB.
+  per job; UnitedHealth's pages ran 195-303 KB.
 - `baseSalary` is present and empty on all three; countries and regions are spelled per site
-  ("United States"/"Florida" against "US"/"CA").
+  ("United States"/"North Carolina" against "US"/"WA"). Measured on UnitedHealth, Kaiser
+  Permanente and Comcast: [Radancy careers sites](https://dev.to/glitchbound/unitedhealth-kaiser-permanente-and-comcast-jobs-api-radancy-careers-sites-one-sitemap-and-one-4p75).
 
 ### SAP SuccessFactors
 
@@ -467,6 +470,8 @@ such as [Workday](https://glitchbound-jobs.pages.dev/workday/),
 [Oracle](https://glitchbound-jobs.pages.dev/oracle/).
 
 Longer write-ups:
+[Walmart, Wells Fargo and Bank of America on Workday](https://dev.to/glitchbound/walmart-wells-fargo-and-bank-of-america-jobs-api-workday-careers-sites-past-the-2000-cap-28ff) ·
+[UnitedHealth, Kaiser Permanente and Comcast on Radancy](https://dev.to/glitchbound/unitedhealth-kaiser-permanente-and-comcast-jobs-api-radancy-careers-sites-one-sitemap-and-one-4p75) ·
 [Home Depot, Walgreens and Best Buy on BrassRing](https://dev.to/glitchbound/home-depot-walgreens-and-best-buy-jobs-api-the-brassring-careers-search-one-cookie-and-50-jobs-a-55m1) ·
 [PepsiCo, Stellantis and Casey's on ADP](https://dev.to/glitchbound/adp-jobs-api-pepsico-stellantis-and-caseys-careers-sites-on-myjobsadpcom-as-json-1nc8) ·
 [SAP SuccessFactors, an HTML table at a time](https://dev.to/glitchbound/sap-successfactors-jobs-api-ey-and-nucor-careers-sites-one-html-table-at-a-time-58a8) ·
