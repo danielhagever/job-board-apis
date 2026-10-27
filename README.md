@@ -192,6 +192,11 @@ curl -s -X POST "https://nvidia.wd5.myworkdayjobs.com/wday/cxs/nvidia/NVIDIAExte
 - `total` is real only on the first page: NVIDIA said 2,000 at offset 0 and 0 at
   offset 20. Keep the first page's number. A loop written as `while offset < total` stops
   after one page and reports no error.
+- `total` stops at 2,000 and past offset 2,000 the search answers page one again, at every
+  offset (Walmart up to 40,000, NVIDIA at 2,000, 2026-10-27), so "page until empty" never
+  ends. Walmart's own facets counted 20,661 jobs: send a facet value back in
+  `appliedFacets` (a state, a country) to cut the board into slices under 2,000, and
+  dedupe on `externalPath`.
 - List rows carry `title`, `externalPath`, `locationsText`, `postedOn` (text such as
   "Posted Today", not a date) and `bulletFields`. The description is one more GET per
   job, on the same base plus `externalPath`:

@@ -76,6 +76,17 @@ def workday_limit():
     return "limit 50 refused with 400"
 
 
+def workday_wrap():
+    """Past offset 2,000 Workday answers page one again instead of nothing."""
+    first = get_json(WORKDAY, {"limit": 20, "offset": 0, "searchText": "", "appliedFacets": {}})
+    time.sleep(1)
+    past = get_json(WORKDAY, {"limit": 20, "offset": 2000, "searchText": "", "appliedFacets": {}})
+    a = [j["externalPath"] for j in first["jobPostings"]]
+    b = [j["externalPath"] for j in past["jobPostings"]]
+    assert b and a == b, "offset 2000 no longer repeats page one"
+    return "offset 2000 answers page one again"
+
+
 def workday_total():
     first = get_json(WORKDAY, {"limit": 20, "offset": 0, "searchText": "", "appliedFacets": {}})
     second = get_json(WORKDAY, {"limit": 20, "offset": 20, "searchText": "", "appliedFacets": {}})
@@ -181,6 +192,7 @@ CHECKS = [
         WORKDAY, {"limit": 20, "offset": 0, "searchText": "", "appliedFacets": {}})["jobPostings"]))),
     ("Workday limit", workday_limit),
     ("Workday total", workday_total),
+    ("Workday wrap", workday_wrap),
     ("Oracle", lambda: rows(len(get_json(
         ORACLE.format(limit=200, offset=0))["items"][0]["requisitionList"]))),
     ("Oracle ceiling", oracle_ceiling),
