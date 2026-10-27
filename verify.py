@@ -8,6 +8,7 @@ asks each host for one or two things and takes about half a minute.
 """
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -81,6 +82,19 @@ def workday_total():
     return f"total {first['total']} on page one, {second['total']} on page two"
 
 
+def successfactors():
+    """EY's SuccessFactors table: a printed total, 25 jobs, each linked twice."""
+    status, raw = fetch("https://careers.ey.com/search-jobs/?q=&startrow=0")
+    assert status == 200, f"HTTP {status}"
+    page = raw.decode("utf-8", "replace")
+    total = re.search(r"of <b>([0-9,]+)</b>", page)
+    assert total, "no printed total"
+    links = re.findall(r'/job/[^"]*/([0-9]+)/', page)
+    assert links and len(links) == 2 * len(set(links)), \
+        f"{len(links)} links for {len(set(links))} jobs: no longer printed twice"
+    return f"total {total.group(1)}, {len(set(links))} jobs, each linked twice"
+
+
 def adp():
     org = get_json(f"{ADP}/career-site/pbna")["orgoid"]
     d = get_json(f"{ADP}/job-requisitions?careerSiteDomain=pbna&$top=100&$skip=0",
@@ -124,6 +138,7 @@ CHECKS = [
     ("Eightfold", lambda: rows(len(get_json(
         "https://hp.eightfold.ai/api/pcsx/search?domain=hp.com&query=&location=&start=0")
         ["data"]["positions"]))),
+    ("SAP SuccessFactors", successfactors),
     ("Amazon", lambda: rows(len(get_json(
         "https://amazon.jobs/en/search.json?offset=0&result_limit=100&sort=recent&base_query=")
         ["jobs"]))),

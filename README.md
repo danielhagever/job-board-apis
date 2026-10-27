@@ -21,7 +21,8 @@ answers the way this page says.
   [BambooHR](#bamboohr) · [Workday](#workday) ·
   [Oracle Recruiting Cloud](#oracle-recruiting-cloud) · [ADP](#adp-myjobsadpcom) ·
   [Phenom](#phenom) · [Jibe](#jibe) · [Eightfold](#eightfold) · [Amazon](#amazon)
-- [Systems with no JSON endpoint](#systems-with-no-json-endpoint) ·
+- [Systems with no JSON endpoint](#systems-with-no-json-endpoint), including
+  [SAP SuccessFactors](#sap-successfactors) ·
   [Closed by robots.txt: SmartRecruiters](#closed-by-robotstxt-smartrecruiters)
 - [Being a good citizen](#being-a-good-citizen)
 - [Hosted versions](#hosted-versions)
@@ -308,8 +309,7 @@ These are readable too, but from the HTML the careers page serves:
 
 - **iCIMS**: `{name}.icims.com/jobs/search?ss=1`, a server-rendered list. Check each
   portal's robots.txt.
-- **SAP SuccessFactors**: on the employer's own careers domain, an HTML table paged by
-  `startrow`. The vendor's `career*.successfactors.com` hosts disallow it in robots.txt.
+- **SAP SuccessFactors**: see [below](#sap-successfactors).
 - **Paylocity**: the board page at `recruiting.paylocity.com/recruiting/jobs/All/{guid}`
   carries every job in a `window.pageData` object.
 - **JazzHR**: `{name}.applytojob.com/apply` lists the whole board.
@@ -317,6 +317,25 @@ These are readable too, but from the HTML the careers page serves:
   needs a portal id read from the page first.
 - **BrassRing** and **Radancy (TalentBrew)**: per-site, through their search pages or
   sitemaps.
+
+### SAP SuccessFactors
+
+Measured 2026-10-27. Read it on the employer's own careers domain: SAP's `career4.successfactors.com`,
+`career8.successfactors.com` and `career2.successfactors.eu` answer robots.txt with
+`Disallow: /`, while `careers.ey.com` and `jobs.nucor.com` close only their apply and
+talent-community pages. The list is an HTML table with its total printed at the top:
+
+```bash
+curl -s "https://careers.ey.com/search-jobs/?q=&startrow=0" | grep -o 'of <b>[0-9,]*</b>'
+```
+
+- 25 rows a page, paged by `startrow` (EY: 9,231 jobs).
+- Every job is printed twice, for desktop and for phones: the first page holds 50 job links
+  for 25 jobs. Dedupe on the number at the end of the link.
+- `q` searches the words and `locationsearch` the place: EY "consultant" was 7,720 jobs,
+  with `locationsearch=London` 319.
+- Dates are text when a site prints them at all (Nucor: `Oct 26, 2026`; EY: none), and
+  `jobs.sap.com` answered a plain `curl` with 403.
 
 ## Closed by robots.txt: SmartRecruiters
 
