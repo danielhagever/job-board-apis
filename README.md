@@ -274,6 +274,8 @@ curl -s "https://careers.costco.com/api/jobs?page=1&limit=100" | jq '.totalCount
 - Each job sits under `.jobs[].data` with the full `description`, `street_address`,
   `latitude`/`longitude` and `posted_date`.
 - The site's robots.txt says `crawl-delay: 5`. One page every five seconds, please.
+- More traps (`limit` over 100 and `page=0` both answer 422, the default order is not
+  newest), measured on Costco and FedEx: [Jibe careers search](https://dev.to/glitchbound/costco-fedex-and-hr-block-jobs-api-the-jibe-careers-search-at-five-seconds-a-page-2ldd).
 
 ## Eightfold
 
@@ -284,6 +286,8 @@ curl -s "https://hp.eightfold.ai/api/pcsx/search?domain=hp.com&query=&location=&
 
 - Ten rows a page, and that is fixed: `num=50` still returns 10 (HP: 826 jobs).
 - `domain` is the employer's own domain.
+- The description is a second call (`position_details`), the old `/api/apply/v2/jobs`
+  answers 403, and some hosts rate-limit hard: [Eightfold careers search](https://dev.to/glitchbound/microsoft-starbucks-and-qualcomm-jobs-api-the-eightfold-careers-search-ten-rows-at-a-time-2g4o).
 
 ## Amazon
 
@@ -382,6 +386,8 @@ such as [Workday](https://glitchbound-jobs.pages.dev/workday/),
 [Oracle](https://glitchbound-jobs.pages.dev/oracle/).
 
 Longer write-ups:
+[Costco, FedEx and H&R Block on Jibe](https://dev.to/glitchbound/costco-fedex-and-hr-block-jobs-api-the-jibe-careers-search-at-five-seconds-a-page-2ldd) ·
+[Microsoft, Starbucks and Qualcomm on Eightfold](https://dev.to/glitchbound/microsoft-starbucks-and-qualcomm-jobs-api-the-eightfold-careers-search-ten-rows-at-a-time-2g4o) ·
 [Amazon jobs API, five traps](https://dev.to/glitchbound/amazon-jobs-api-amazonjobs-search-as-json-and-five-traps-between-you-and-all-21000-openings-1mig) ·
 [Oracle Recruiting Cloud, step by step](https://dev.to/glitchbound/oracle-recruiting-cloud-jobs-api-marriott-kroger-and-jpmorgan-careers-sites-as-json-4b50) ·
 [the seven traps on this page, as an article](https://dev.to/glitchbound/public-job-board-apis-17-applicant-tracking-systems-that-publish-every-opening-as-json-cn6) ·
