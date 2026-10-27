@@ -355,7 +355,24 @@ These are readable too, but from the HTML the careers page serves:
 - **Taleo**: a JSON search exists at `/careersection/rest/jobboard/searchjobs`, but it
   needs a portal id read from the page first.
 - **BrassRing**: JSON after the search page's cookie and token, see [above](#brassring).
-- **Radancy (TalentBrew)**: per-site, through the sitemap and each job page's JSON-LD.
+- **Radancy (TalentBrew)**: see [below](#radancy-talentbrew).
+
+### Radancy (TalentBrew)
+
+UnitedHealth Group, Kaiser Permanente and Comcast run their careers sites on it. robots.txt
+closes `/search-jobs/` and nothing else; the sitemap lists every job with a `<lastmod>`:
+
+```bash
+curl -s "https://careers.unitedhealthgroup.com/sitemap.xml" \
+  | grep -o '<loc>[^<]*/job/[^<]*</loc>' | wc -l
+```
+
+- Job URLs are `/job/<city>/<title>/<org>/<id>`, so a title can be picked out of the sitemap
+  before any page is fetched (Kaiser Permanente: 422 of 3,181 with "nurse", 2026-10-27).
+- Each job page carries one schema.org `JobPosting` in `application/ld+json`. One request
+  per job; UnitedHealth's pages ran 175-292 KB.
+- `baseSalary` is present and empty on all three; countries and regions are spelled per site
+  ("United States"/"Florida" against "US"/"CA").
 
 ### SAP SuccessFactors
 

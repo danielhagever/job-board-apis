@@ -138,6 +138,24 @@ def brassring():
     return f"count {d['JobsCount']}, {rows(len(d['Jobs']['Job']))}"
 
 
+def radancy():
+    """UnitedHealth's Radancy site: search closed, sitemap open, JSON-LD per job."""
+    status, raw = fetch("https://careers.unitedhealthgroup.com/robots.txt")
+    assert status == 200 and b"Disallow:/search-jobs/" in raw.replace(b" ", b""), \
+        "robots.txt no longer closes /search-jobs/"
+    status, raw = fetch("https://careers.unitedhealthgroup.com/sitemap.xml")
+    assert status == 200, f"sitemap HTTP {status}"
+    jobs = re.findall(r"<loc>([^<]*/job/[^<]*)</loc>", raw.decode("utf-8", "replace"))
+    assert jobs, "no job pages in the sitemap"
+    time.sleep(1)
+    status, raw = fetch(jobs[0])
+    page = raw.decode("utf-8", "replace")
+    ld = re.search(r'<script type="application/ld\+json">(.*?)</script>', page, re.S)
+    assert ld and json.loads(ld.group(1), strict=False).get("@type") == "JobPosting", \
+        "no JobPosting on a job page"
+    return f"{len(jobs)} jobs in the sitemap, JobPosting on the page"
+
+
 CHECKS = [
     ("Greenhouse", lambda: rows(len(get_json(
         "https://boards-api.greenhouse.io/v1/boards/figma/jobs")["jobs"]))),
@@ -177,6 +195,7 @@ CHECKS = [
         ["data"]["positions"]))),
     ("SAP SuccessFactors", successfactors),
     ("BrassRing", brassring),
+    ("Radancy", radancy),
     ("Amazon", lambda: rows(len(get_json(
         "https://amazon.jobs/en/search.json?offset=0&result_limit=100&sort=recent&base_query=")
         ["jobs"]))),
