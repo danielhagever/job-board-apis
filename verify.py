@@ -63,6 +63,18 @@ def rows(n):
     return f"{n} rows"
 
 
+def greenhouse_pay():
+    """Greenhouse returns pay_input_ranges only to a request that asks for them."""
+    url = "https://boards-api.greenhouse.io/v1/boards/andurilindustries/jobs"
+    plain = get_json(url)["jobs"]
+    assert plain and not any("pay_input_ranges" in j for j in plain), "pay without the flag"
+    time.sleep(1)
+    asked = get_json(url + "?pay_transparency=true")["jobs"]
+    priced = [j for j in asked if j.get("pay_input_ranges")]
+    assert priced and "min_cents" in priced[0]["pay_input_ranges"][0], "no ranges with the flag"
+    return f"{len(priced)} of {len(asked)} priced with the flag, none without"
+
+
 def phenom_window():
     """Phenom answers while from + size stays under 10,000, then 200 with nothing."""
     url = "https://jobs.cvshealth.com/widgets"
@@ -185,6 +197,7 @@ def radancy():
 CHECKS = [
     ("Greenhouse", lambda: rows(len(get_json(
         "https://boards-api.greenhouse.io/v1/boards/figma/jobs")["jobs"]))),
+    ("Greenhouse pay", greenhouse_pay),
     ("Lever", lambda: rows(len(get_json(
         "https://api.lever.co/v0/postings/palantir?mode=json")))),
     ("Ashby", lambda: rows(len(get_json(

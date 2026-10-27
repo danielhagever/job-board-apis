@@ -85,7 +85,14 @@ curl -s "https://boards-api.greenhouse.io/v1/boards/figma/jobs" | jq '.meta.tota
 - The whole board comes back in one response, and `meta.total` says how many to expect
   (Figma: 139 of 139). Compare the two so you notice the day a board starts paging.
 - `?content=true` adds the description, departments and offices. It is much heavier:
-  Figma's response went from 88 KB to 1.6 MB.
+  Figma's response went from 88 KB to 1.6 MB, SpaceX's from 2.7 MB to 32 MB, and the HTML
+  arrives entity-encoded (`&lt;p&gt;`): unescape before stripping tags.
+- `?pay_transparency=true` adds `pay_input_ranges` (in cents) to every job in the same
+  response; without it there is no pay field. 32 of the 60 largest boards publish ranges,
+  on 14,208 of 53,750 jobs (Anduril 2,342 of 2,520; 2026-10-27).
+- A posting is not a job: `internal_job_id` groups postings (SpaceX: 2,832 postings, 2,125
+  jobs). The board token is not the name either: `anduril` is 404, `andurilindustries` 200.
+  Measured on SpaceX, Anduril and Databricks: [Greenhouse pay ranges](https://dev.to/glitchbound/spacex-anduril-and-databricks-jobs-api-the-greenhouse-board-api-and-the-pay-ranges-it-hides-4hj6).
 
 ## Lever
 
@@ -482,6 +489,7 @@ such as [Workday](https://glitchbound-jobs.pages.dev/workday/),
 [Oracle](https://glitchbound-jobs.pages.dev/oracle/).
 
 Longer write-ups:
+[SpaceX, Anduril and Databricks on Greenhouse](https://dev.to/glitchbound/spacex-anduril-and-databricks-jobs-api-the-greenhouse-board-api-and-the-pay-ranges-it-hides-4hj6) ·
 [RTX, UPS and CVS Health on Phenom](https://dev.to/glitchbound/rtx-ups-and-cvs-health-jobs-api-the-phenom-careers-search-past-10000-jobs-42km) ·
 [Target, Netflix and Verizon on Workday](https://dev.to/glitchbound/target-netflix-and-verizon-jobs-api-workday-addresses-that-move-ids-that-are-not-ids-53o9) ·
 [Walmart, Wells Fargo and Bank of America on Workday](https://dev.to/glitchbound/walmart-wells-fargo-and-bank-of-america-jobs-api-workday-careers-sites-past-the-2000-cap-28ff) ·
