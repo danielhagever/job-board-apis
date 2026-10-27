@@ -43,7 +43,7 @@ answers the way this page says.
 | BambooHR | `GET {token}.bamboohr.com/careers/list` | whole board | none | no posted date |
 | Workday | `POST {host}.{wdN}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs` | 20 max | `offset` | `total` is only real on page one |
 | Oracle Recruiting Cloud | `GET {host}/hcmRestApi/resources/latest/recruitingCEJobRequisitions` | 200 | `offset` | nothing past 10,000 per query |
-| ADP | `GET myjobs.adp.com/public/staffing/v1/job-requisitions` | `$top` | `$skip` | needs an `orgoid` header |
+| ADP | `GET myjobs.adp.com/public/staffing/v1/job-requisitions` | `$top` | `$skip` | needs an `orgoid` header; `count` stops at 10,000 |
 | Phenom | `POST {careers host}/widgets` | 100 | `from` | |
 | Jibe | `GET {careers host}/api/jobs` | 100 | `page` | robots.txt asks for a 5 s crawl delay |
 | Eightfold | `GET {host}/api/pcsx/search` | 10, fixed | `start` | |
@@ -237,7 +237,16 @@ curl -s -H "orgoid: $ORG" \
 ```
 
 - Without the header the list answers 400 `"Missing orgoid header"`.
-- `career-site/pbna` names the employer: "PepsiCo Beverages North America" (406 jobs).
+- `career-site/pbna` names the employer in `clientName`: "PepsiCo Beverages North America".
+  Its `name` is the site's label (`ExternalCareerSiteNewUX`).
+- The default answer has no posting date and no description. Ask for them:
+  `&$select=jobTitle,reqId,postingDate,salaried,jobDescription,requisitionLocations`.
+  The full description comes inside the list, so it costs no request per job.
+- `count` stops at 10,000 and the list does not: Dhanani Group (`popeyes`) declared 10,000
+  and answered a short page of 21 at `$skip=13800`, 13,821 jobs (2026-10-27). Page until a
+  short page.
+- Two sites can be one list. Sempra's `sdgecareers` and `socalgascareers` share one `orgoid`
+  and answered the same 339 jobs. Dedupe on `orgoid` plus `reqId`.
 - This is ADP's newer career centre. The older `workforcenow.adp.com ... ?cid=<guid>`
   pages are a different product with a different API.
 

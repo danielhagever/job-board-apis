@@ -102,6 +102,17 @@ def adp():
     return f"count {d['count']}, {rows(len(d['jobRequisitions']))}"
 
 
+def adp_count_cap():
+    """`count` says 10,000 and the list still answers past it."""
+    time.sleep(5)    # ADP answers a burst of quick pages with HTML instead of JSON
+    org = get_json(f"{ADP}/career-site/popeyes")["orgoid"]
+    d = get_json(f"{ADP}/job-requisitions?careerSiteDomain=popeyes&$top=100&$skip=10000"
+                 "&$select=reqId", headers={"orgoid": org})
+    n = len(d["jobRequisitions"])
+    assert d["count"] == 10000 and n > 0, f"count {d['count']}, {n} rows past it"
+    return f"count {d['count']}, {rows(n)} at $skip=10000"
+
+
 CHECKS = [
     ("Greenhouse", lambda: rows(len(get_json(
         "https://boards-api.greenhouse.io/v1/boards/figma/jobs")["jobs"]))),
@@ -131,6 +142,7 @@ CHECKS = [
         ORACLE.format(limit=200, offset=0))["items"][0]["requisitionList"]))),
     ("Oracle ceiling", oracle_ceiling),
     ("ADP", adp),
+    ("ADP count cap", adp_count_cap),
     ("Phenom", lambda: rows(len(get_json(
         "https://careers.rtx.com/widgets", PHENOM_BODY)["refineSearch"]["data"]["jobs"]))),
     ("Jibe", lambda: rows(len(get_json(
