@@ -1,4 +1,4 @@
-# Job board APIs: public job posting endpoints for 17 applicant tracking systems
+# Job board APIs: public job posting endpoints for 18 applicant tracking systems
 
 [![verify endpoints](https://github.com/danielhagever/job-board-apis/actions/workflows/verify.yml/badge.svg)](https://github.com/danielhagever/job-board-apis/actions/workflows/verify.yml)
 
@@ -20,7 +20,8 @@ answers the way this page says.
   [Personio](#personio) · [Breezy HR](#breezy-hr) · [Teamtailor](#teamtailor) ·
   [BambooHR](#bamboohr) · [Workday](#workday) ·
   [Oracle Recruiting Cloud](#oracle-recruiting-cloud) · [ADP](#adp-myjobsadpcom) ·
-  [Phenom](#phenom) · [Jibe](#jibe) · [Eightfold](#eightfold) · [Amazon](#amazon)
+  [Phenom](#phenom) · [Jibe](#jibe) · [Eightfold](#eightfold) · [Amazon](#amazon) ·
+  [BrassRing](#brassring)
 - [Systems with no JSON endpoint](#systems-with-no-json-endpoint), including
   [SAP SuccessFactors](#sap-successfactors) ·
   [Closed by robots.txt: SmartRecruiters](#closed-by-robotstxt-smartrecruiters)
@@ -48,6 +49,7 @@ answers the way this page says.
 | Jibe | `GET {careers host}/api/jobs` | 100 | `page` | robots.txt asks for a 5 s crawl delay |
 | Eightfold | `GET {host}/api/pcsx/search` | 10, fixed | `start` | |
 | Amazon | `GET amazon.jobs/en/search.json` | 100 | `offset` | |
+| BrassRing | `POST sjobs.brassring.com/TgNewUI/Search/Ajax/MatchedJobs` | 50 | `pageNumber` | needs the search page's cookie and token |
 
 ## Finding a company's token
 
@@ -69,6 +71,7 @@ any job, and read the host:
 | `nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite` | Workday | host `nvidia`, data centre `wd5`, site `NVIDIAExternalCareerSite` |
 | `ejwl.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX` | Oracle | host `ejwl.fa.us2.oraclecloud.com`, site `CX` |
 | `myjobs.adp.com/pbna` | ADP | `pbna` |
+| `sjobs.brassring.com/TGnewUI/Search/Home/Home?partnerid=25632&siteid=5649` | BrassRing | partner `25632`, site `5649` |
 
 Workday and Oracle cannot be guessed from a company's domain: the host label, the data
 centre and the site name are each the employer's own choice. You need the real address.
@@ -246,9 +249,10 @@ curl -s -H "orgoid: $ORG" \
   and answered a short page of 21 at `$skip=13800`, 13,821 jobs (2026-10-27). Page until a
   short page.
 - Two sites can be one list. Sempra's `sdgecareers` and `socalgascareers` share one `orgoid`
-  and answered the same 339 jobs. Dedupe on `orgoid` plus `reqId`.
+  and answered the same 340 jobs. Dedupe on `orgoid` plus `reqId`.
 - This is ADP's newer career centre. The older `workforcenow.adp.com ... ?cid=<guid>`
   pages are a different product with a different API.
+- Measured on PepsiCo Beverages, Stellantis and Casey's: [ADP career sites](https://dev.to/glitchbound/adp-jobs-api-pepsico-stellantis-and-caseys-careers-sites-on-myjobsadpcom-as-json-1nc8).
 
 ## Phenom
 
@@ -313,6 +317,30 @@ curl -s "https://amazon.jobs/en/search.json?offset=0&result_limit=100&sort=recen
   filters nothing), measured: [Amazon jobs API](https://dev.to/glitchbound/amazon-jobs-api-amazonjobs-search-as-json-and-five-traps-between-you-and-all-21000-openings-1mig).
 - A quick start that reads all of it by title or place: [amazon-jobs-api](https://github.com/danielhagever/amazon-jobs-api).
 
+## BrassRing
+
+One host for every employer, a board is a partner id and a site id (Best Buy is
+`25632`/`5649`). The search answers JSON once you carry the search page's cookie and its
+`__RequestVerificationToken`, sent back as a header named `RFT`:
+
+```bash
+curl -s -c jar "https://sjobs.brassring.com/TGnewUI/Search/Home/Home?partnerid=25632&siteid=5649" \
+  | grep -o '__RequestVerificationToken" type="hidden" value="[^"]*' | cut -d'"' -f5 > rft
+curl -s -b jar -X POST -H "RFT: $(cat rft)" -H "Content-Type: application/json" \
+  -d '{"PartnerId":"25632","SiteId":"5649","Keyword":"","Location":"","KeywordCustomSolrFields":"JobTitle","LocationCustomSolrFields":"Location"}' \
+  "https://sjobs.brassring.com/TgNewUI/Search/Ajax/MatchedJobs" \
+  | jq '.JobsCount, (.Jobs.Job | length)'
+```
+
+- Without the cookie or the token it answers 500 and an HTML error page.
+- A job is a list of `{"QuestionName", "Value"}` pairs; what `formtext12` means is set per
+  site in the search page's `JobFieldsToDisplay`. The employer is the page's `PartnerName`.
+- `ProcessSortAndShowMoreJobs` pages by `pageNumber`, sorted by `LastUpdated` or `JobTitle`,
+  and both are full of ties: one `LastUpdated` sweep of Best Buy read 2,619 distinct jobs
+  out of 3,105 rows (2026-10-27). Dedupe on `reqid` and sweep again by `JobTitle`.
+- No robots.txt (404). Measured on Home Depot, Walgreens and Best Buy:
+  [BrassRing careers search](https://dev.to/glitchbound/home-depot-walgreens-and-best-buy-jobs-api-the-brassring-careers-search-one-cookie-and-50-jobs-a-55m1).
+
 ## Systems with no JSON endpoint
 
 These are readable too, but from the HTML the careers page serves:
@@ -326,8 +354,8 @@ These are readable too, but from the HTML the careers page serves:
 - **JazzHR**: `{name}.applytojob.com/apply` lists the whole board.
 - **Taleo**: a JSON search exists at `/careersection/rest/jobboard/searchjobs`, but it
   needs a portal id read from the page first.
-- **BrassRing** and **Radancy (TalentBrew)**: per-site, through their search pages or
-  sitemaps.
+- **BrassRing**: JSON after the search page's cookie and token, see [above](#brassring).
+- **Radancy (TalentBrew)**: per-site, through the sitemap and each job page's JSON-LD.
 
 ### SAP SuccessFactors
 
@@ -417,6 +445,8 @@ such as [Workday](https://glitchbound-jobs.pages.dev/workday/),
 [Oracle](https://glitchbound-jobs.pages.dev/oracle/).
 
 Longer write-ups:
+[Home Depot, Walgreens and Best Buy on BrassRing](https://dev.to/glitchbound/home-depot-walgreens-and-best-buy-jobs-api-the-brassring-careers-search-one-cookie-and-50-jobs-a-55m1) ·
+[PepsiCo, Stellantis and Casey's on ADP](https://dev.to/glitchbound/adp-jobs-api-pepsico-stellantis-and-caseys-careers-sites-on-myjobsadpcom-as-json-1nc8) ·
 [SAP SuccessFactors, an HTML table at a time](https://dev.to/glitchbound/sap-successfactors-jobs-api-ey-and-nucor-careers-sites-one-html-table-at-a-time-58a8) ·
 [iCIMS, behind one iframe flag](https://dev.to/glitchbound/icims-jobs-api-brightspring-and-concentra-careers-portals-behind-one-iframe-flag-3eal) ·
 [Costco, FedEx and H&R Block on Jibe](https://dev.to/glitchbound/costco-fedex-and-hr-block-jobs-api-the-jibe-careers-search-at-five-seconds-a-page-2ldd) ·

@@ -113,6 +113,31 @@ def adp_count_cap():
     return f"count {d['count']}, {rows(n)} at $skip=10000"
 
 
+BRASSRING = "https://sjobs.brassring.com"
+
+
+def brassring():
+    """Best Buy's BrassRing search: the page's cookie and token, then JSON."""
+    import http.cookiejar
+    jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+    h = {"User-Agent": UA}
+    with opener.open(urllib.request.Request(
+            f"{BRASSRING}/TGnewUI/Search/Home/Home?partnerid=25632&siteid=5649", None, h),
+            timeout=60) as r:
+        page = r.read().decode("utf-8", "replace")
+    token = re.search(r'__RequestVerificationToken" type="hidden" value="([^"]*)', page)
+    assert token, "no token on the search page"
+    body = {"PartnerId": "25632", "SiteId": "5649", "Keyword": "", "Location": "",
+            "KeywordCustomSolrFields": "JobTitle", "LocationCustomSolrFields": "Location"}
+    req = urllib.request.Request(
+        f"{BRASSRING}/TgNewUI/Search/Ajax/MatchedJobs", json.dumps(body).encode(),
+        dict(h, RFT=token.group(1), **{"Content-Type": "application/json"}))
+    with opener.open(req, timeout=60) as r:
+        d = json.loads(r.read())
+    return f"count {d['JobsCount']}, {rows(len(d['Jobs']['Job']))}"
+
+
 CHECKS = [
     ("Greenhouse", lambda: rows(len(get_json(
         "https://boards-api.greenhouse.io/v1/boards/figma/jobs")["jobs"]))),
@@ -151,6 +176,7 @@ CHECKS = [
         "https://hp.eightfold.ai/api/pcsx/search?domain=hp.com&query=&location=&start=0")
         ["data"]["positions"]))),
     ("SAP SuccessFactors", successfactors),
+    ("BrassRing", brassring),
     ("Amazon", lambda: rows(len(get_json(
         "https://amazon.jobs/en/search.json?offset=0&result_limit=100&sort=recent&base_query=")
         ["jobs"]))),
