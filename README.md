@@ -199,6 +199,12 @@ curl -s -X POST "https://nvidia.wd5.myworkdayjobs.com/wday/cxs/nvidia/NVIDIAExte
   and dedupe on `externalPath`. Not every site caps: Bank of America's `us-emplsv` said
   3,027 and paged past 2,000 normally, so treat exactly 2,000 as the cap. Measured on
   Walmart, Wells Fargo and Bank of America: [Workday past the 2,000 cap](https://dev.to/glitchbound/walmart-wells-fargo-and-bank-of-america-jobs-api-workday-careers-sites-past-the-2000-cap-28ff).
+- The data centre moves: Netflix answers on `wd108` and 422 on `wd1`/`wd5`, Cracker Barrel
+  moved from `wd5` to `wd503`. 422 = tenant not on that data centre, 404 = right data centre,
+  wrong site name. Facet names belong to the tenant (Target: `Location_Country`, not
+  Walmart's `locationCountry`), and `bulletFields[0]` is a label on some sites (Thales:
+  "Regular Employee"): key on the requisition at the end of `externalPath`. Measured on
+  Target, Netflix and Verizon: [Workday addresses that move](https://dev.to/glitchbound/target-netflix-and-verizon-jobs-api-workday-addresses-that-move-ids-that-are-not-ids-53o9).
 - List rows carry `title`, `externalPath`, `locationsText`, `postedOn` (text such as
   "Posted Today", not a date) and `bulletFields`. The description is one more GET per
   job, on the same base plus `externalPath`:
@@ -286,7 +292,8 @@ curl -s -X POST "https://careers.rtx.com/widgets" -H "Content-Type: application/
   production, that is why.
 - Phenom often sits in front of a Workday board (RTX, CVS Health, Eli Lilly; UPS splits
   between Workday and Fountain), so the same jobs may be readable there. `reqId` is the
-  number in the Workday address, so it dedupes across the two.
+  number in the Workday address, so it dedupes across the two. Measured on RTX, UPS and
+  CVS Health: [Phenom careers search past 10,000 jobs](https://dev.to/glitchbound/rtx-ups-and-cvs-health-jobs-api-the-phenom-careers-search-past-10000-jobs-42km).
 
 ## Jibe
 
@@ -475,6 +482,8 @@ such as [Workday](https://glitchbound-jobs.pages.dev/workday/),
 [Oracle](https://glitchbound-jobs.pages.dev/oracle/).
 
 Longer write-ups:
+[RTX, UPS and CVS Health on Phenom](https://dev.to/glitchbound/rtx-ups-and-cvs-health-jobs-api-the-phenom-careers-search-past-10000-jobs-42km) ·
+[Target, Netflix and Verizon on Workday](https://dev.to/glitchbound/target-netflix-and-verizon-jobs-api-workday-addresses-that-move-ids-that-are-not-ids-53o9) ·
 [Walmart, Wells Fargo and Bank of America on Workday](https://dev.to/glitchbound/walmart-wells-fargo-and-bank-of-america-jobs-api-workday-careers-sites-past-the-2000-cap-28ff) ·
 [UnitedHealth, Kaiser Permanente and Comcast on Radancy](https://dev.to/glitchbound/unitedhealth-kaiser-permanente-and-comcast-jobs-api-radancy-careers-sites-one-sitemap-and-one-4p75) ·
 [Home Depot, Walgreens and Best Buy on BrassRing](https://dev.to/glitchbound/home-depot-walgreens-and-best-buy-jobs-api-the-brassring-careers-search-one-cookie-and-50-jobs-a-55m1) ·
