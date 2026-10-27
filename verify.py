@@ -33,7 +33,7 @@ ADP = "https://myjobs.adp.com/public/staffing/v1"
 # Hosts measured to refuse cloud addresses while answering a home connection:
 # careers.rtx.com gave a GitHub Actions runner 403 on 2026-10-25 and a residential
 # line 100 rows the same hour. In CI a 403 from these is a skip, not a failure.
-CLOUD_BLOCKED = {"Phenom"}
+CLOUD_BLOCKED = {"Phenom", "Phenom window"}
 
 
 def fetch(url, body=None, headers=None):
@@ -61,6 +61,21 @@ def get_json(url, body=None, headers=None):
 def rows(n):
     assert n > 0, "no rows"
     return f"{n} rows"
+
+
+def phenom_window():
+    """Phenom answers while from + size stays under 10,000, then 200 with nothing."""
+    url = "https://jobs.cvshealth.com/widgets"
+    body = {"ddoKey": "refineSearch", "jobs": True, "size": 100,
+            "sort": {"order": "desc", "field": "dateCreated"}}
+    inside = get_json(url, dict(body, **{"from": 9899}))["refineSearch"]
+    assert inside["totalHits"] > 10000, f"CVS lists {inside['totalHits']}, not past the window"
+    rows(len(inside["data"]["jobs"]))
+    time.sleep(1)
+    past = get_json(url, dict(body, **{"from": 9900}))["refineSearch"]
+    assert not (past.get("data") or {}).get("jobs") and past.get("totalHits") == 0, \
+        "the window moved"
+    return f"{inside['totalHits']} listed, rows at 9,899, none at 9,900"
 
 
 def oracle_ceiling():
@@ -200,6 +215,7 @@ CHECKS = [
     ("ADP count cap", adp_count_cap),
     ("Phenom", lambda: rows(len(get_json(
         "https://careers.rtx.com/widgets", PHENOM_BODY)["refineSearch"]["data"]["jobs"]))),
+    ("Phenom window", phenom_window),
     ("Jibe", lambda: rows(len(get_json(
         "https://careers.costco.com/api/jobs?page=1&limit=100")["jobs"]))),
     ("Eightfold", lambda: rows(len(get_json(

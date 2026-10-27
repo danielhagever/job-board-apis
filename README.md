@@ -263,25 +263,30 @@ curl -s -H "orgoid: $ORG" \
 
 ## Phenom
 
-Phenom is a careers front end (RTX, UPS, Eli Lilly and others) that answers one `POST`:
+Phenom is a careers front end (RTX, UPS, CVS Health, Eli Lilly and others) that answers one
+`POST`:
 
 ```bash
-curl -s -X POST "https://careers.rtx.com/widgets" -H "Content-Type: application/json" -d '{
-  "lang": "en_global", "deviceType": "desktop", "country": "global",
-  "pageName": "search-results", "ddoKey": "refineSearch", "sortBy": "", "subsearch": "",
-  "from": 0, "size": 100, "jobs": true, "counts": false,
-  "all_fields": ["country", "state", "city", "category", "type"],
-  "clearAll": false, "jdsource": "facets", "isSliderEnable": false, "pageId": "page17",
-  "siteType": "external", "keywords": "", "global": true, "selected_fields": {},
-  "locationData": {}, "sort": {"order": "desc", "field": "postedDate"}}' \
+curl -s -X POST "https://careers.rtx.com/widgets" -H "Content-Type: application/json" \
+  -d '{"ddoKey":"refineSearch","jobs":true,"from":0,"size":500,"sort":{"order":"desc","field":"dateCreated"}}' \
   | jq '.refineSearch.totalHits, (.refineSearch.data.jobs | length)'
 ```
 
-- 100 a page, paged by `from` (RTX: 4,767 jobs).
+- Without `"jobs": true` the answer is a count and no jobs. `size` goes to 500: all 49 sites
+  checked gave 500 (2026-10-27), paged by `from` (RTX: 4,809 jobs).
+- Sort by `dateCreated`. `postedDate` is a day at midnight, and the order among ties changes
+  between requests: RTX paged 100 at a time by it gave 4,667 and 4,719 distinct jobs of
+  4,809 in two reads. A sort field the site does not know answers `totalHits` 0, no error.
+- `from` + `size` must stay under 10,000. Past it the answer is HTTP 200 with `totalHits` 0
+  and no jobs, exactly like the end of the list (CVS Health, 19,643 jobs). Read past it by
+  facet: `"counts": true, "all_fields": ["category", "state"]` returns each value's count,
+  and `"selected_fields": {"category": ["Pharmacy"]}` narrows the search to one value.
 - careers.rtx.com answered **403 to a cloud server** (a GitHub Actions runner) in the same
   hour it answered this from a home connection. If it works on your laptop and fails in
   production, that is why.
-- Phenom often sits in front of a Workday board, so the same jobs may be readable there.
+- Phenom often sits in front of a Workday board (RTX, CVS Health, Eli Lilly; UPS splits
+  between Workday and Fountain), so the same jobs may be readable there. `reqId` is the
+  number in the Workday address, so it dedupes across the two.
 
 ## Jibe
 
