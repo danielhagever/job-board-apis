@@ -37,11 +37,11 @@ answers the way this page says.
 | Ashby | `GET api.ashbyhq.com/posting-api/job-board/{token}` | whole board | none | salary only with `includeCompensation=true` |
 | Recruitee | `GET {token}.recruitee.com/api/offers/` | whole board | none | |
 | Workable | `GET apply.workable.com/api/v1/widget/accounts/{token}?details=true` | whole board | none | top-level `name` is the employer |
-| Rippling | `GET api.rippling.com/platform/api/ats/v1/board/{token}/jobs` | whole board | none | five fields, no description |
+| Rippling | `GET api.rippling.com/platform/api/ats/v1/board/{token}/jobs` | whole board | none | five fields; posting and pay in `/jobs/{uuid}` |
 | Personio | `GET {token}.jobs.personio.de/xml` | whole board | none | XML, not JSON |
 | Breezy HR | `GET {token}.breezy.hr/json` | whole board | none | no description |
 | Teamtailor | `GET {token}.teamtailor.com/jobs.json` | 100 | `next_url` | JSON Feed with schema.org `JobPosting` |
-| BambooHR | `GET {token}.bamboohr.com/careers/list` | whole board | none | no posted date |
+| BambooHR | `GET {token}.bamboohr.com/careers/list` | whole board | none | no posted date; `/careers/{id}/detail` has it and the pay line |
 | Workday | `POST {host}.{wdN}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs` | 20 max | `offset` | `total` is only real on page one |
 | Oracle Recruiting Cloud | `GET {host}/hcmRestApi/resources/latest/recruitingCEJobRequisitions` | 200 | `offset` | nothing past 10,000 per query |
 | ADP | `GET myjobs.adp.com/public/staffing/v1/job-requisitions` | `$top` | `$skip` | needs an `orgoid` header; `count` stops at 10,000 |
@@ -134,11 +134,20 @@ curl -s "https://apply.workable.com/api/v1/widget/accounts/huzzle?details=true" 
 ## Rippling
 
 ```bash
-curl -s "https://api.rippling.com/platform/api/ats/v1/board/rippling/jobs" | jq 'length, .[0]'
+B=https://api.rippling.com/platform/api/ats/v1/board/barrys-careers/jobs
+curl -s "$B" | jq -c '{entries: length, jobs: (map(.uuid) | unique | length)}'
+curl -s "$B/$(curl -s "$B" | jq -r '.[0].uuid')" | jq -c '{name, createdOn, payRangeDetails}'
 ```
 
-- Each job has exactly five fields: `uuid`, `name`, `department`, `url`, `workLocation`.
-  There is no description at any depth; that is the source, not a parsing miss.
+- The list has five fields per entry, `uuid`, `name`, `department`, `url` and
+  `workLocation`, and one entry per place: a job open in five cities is five entries
+  (Rippling's own board, 686 entries for 381 jobs on 2026-10-29). Count by `uuid`.
+- Each job's own record, `/jobs/{uuid}`, has the rest: `description` in two parts
+  (`company`, `role`), `createdOn`, every place in `workLocations`, and `payRangeDetails`,
+  one band per location with its currency and `frequency` (`YEAR`, `HOUR`). Barry's fills it
+  on every job; Rippling and Carbon Health leave it empty and write the pay into the
+  description. Measured on all three:
+  [Rippling job records and their pay](https://dev.to/glitchbound/rippling-carbon-health-and-barrys-jobs-api-the-pay-in-each-jobs-own-record-one-location-at-a-45h3).
 
 ## Personio
 
@@ -176,8 +185,17 @@ curl -s "https://401auto.bamboohr.com/careers/list" | jq '.meta.totalCount, (.re
 ```
 
 - One response, with `meta.totalCount` to check against (140 of 140).
-- The list has no posted date. If you need "new since last run", keep your own
-  first-seen date.
+- The list has no posted date. Each job's own record has it:
+
+  ```bash
+  H=https://eggharborcafe.bamboohr.com/careers
+  curl -s "$H/$(curl -s "$H/list" | jq -r '.result[0].id')/detail" \
+    | jq -c '.result.jobOpening | {jobOpeningName, compensation, datePosted}'
+  ```
+
+  `result.jobOpening` carries the description, `datePosted` and `compensation`, a line the
+  employer types: "$21-$27 (hourly plus tips)", "$50,000-$60,000", "DOE", or nothing. One
+  request per job ([BambooHR records](https://dev.to/glitchbound/rippling-carbon-health-and-barrys-jobs-api-the-pay-in-each-jobs-own-record-one-location-at-a-45h3)).
 - A tenant that does not exist redirects to bamboohr.com, which answers 200 with HTML, so
   check that the body parses as JSON.
 
@@ -364,6 +382,13 @@ curl -s -b jar -X POST -H "RFT: $(cat rft)" -H "Content-Type: application/json" 
 - `ProcessSortAndShowMoreJobs` pages by `pageNumber`, sorted by `LastUpdated` or `JobTitle`,
   and both are full of ties: one `LastUpdated` sweep of Best Buy read 2,619 distinct jobs
   out of 3,105 rows (2026-10-27). Dedupe on `reqid` and sweep again by `JobTitle`.
+- A job's details are one more POST with the same cookie and token:
+  `/TgNewUI/Search/Ajax/JobDetails` with `{"partnerId", "siteId", "jobid", "configMode": "",
+  "jobSiteId", "turnOffHttps": false}`, where `jobid` is the job's `reqid` question. It
+  answers every section of the posting and the employer's own pay questions, each named its
+  own way (Walgreens "Start Rate" and "Max Rate", Best Buy "Minimum Pay" and "Maximum Pay").
+  Measured on Publix, General Atomics and Hobby Lobby:
+  [BrassRing job details and pay questions](https://dev.to/glitchbound/publix-general-atomics-and-hobby-lobby-jobs-api-brassring-job-details-and-the-pay-questions-each-32i8).
 - No robots.txt (404). Measured on Home Depot, Walgreens and Best Buy:
   [BrassRing careers search](https://dev.to/glitchbound/home-depot-walgreens-and-best-buy-jobs-api-the-brassring-careers-search-one-cookie-and-50-jobs-a-55m1).
 
@@ -377,7 +402,11 @@ These are readable too, but from the HTML the careers page serves:
 - **SAP SuccessFactors**: see [below](#sap-successfactors).
 - **Paylocity**: the board page at `recruiting.paylocity.com/recruiting/jobs/All/{guid}`
   carries every job in a `window.pageData` object.
-- **JazzHR**: `{name}.applytojob.com/apply` lists the whole board.
+- **JazzHR**: `{name}.applytojob.com/apply` lists the whole board, title, place and
+  department only. Each job's page carries a schema.org `JobPosting` with the description,
+  `datePosted` and, where the employer fills it, `baseSalary`; check its `unitText` against
+  the numbers (Ethos Veterinary Health marks hourly rates `YEAR`):
+  [schema.org JobPosting pay](https://dev.to/glitchbound/commonspirit-health-crunch-fitness-and-the-joint-jobs-api-the-pay-in-a-job-pages-schemaorg-5d41).
 - **Taleo**: a JSON search exists at `/careersection/rest/jobboard/searchjobs`, but it
   needs a portal id read from the page first.
 - **BrassRing**: JSON after the search page's cookie and token, see [above](#brassring).
@@ -397,7 +426,8 @@ curl -s "https://careers.unitedhealthgroup.com/sitemap.xml" \
   before any page is fetched (Kaiser Permanente: 424 of 3,191 with "nurse", 2026-10-27).
 - Each job page carries one schema.org `JobPosting` in `application/ld+json`. One request
   per job; UnitedHealth's pages ran 195-303 KB.
-- `baseSalary` is present and empty on all three; countries and regions are spelled per site
+- `baseSalary` is present and empty on all three (CommonSpirit Health, on the same system,
+  fills it on every job: [schema.org JobPosting pay](https://dev.to/glitchbound/commonspirit-health-crunch-fitness-and-the-joint-jobs-api-the-pay-in-a-job-pages-schemaorg-5d41)); countries and regions are spelled per site
   ("United States"/"North Carolina" against "US"/"WA"). Measured on UnitedHealth, Kaiser
   Permanente and Comcast: [Radancy careers sites](https://dev.to/glitchbound/unitedhealth-kaiser-permanente-and-comcast-jobs-api-radancy-careers-sites-one-sitemap-and-one-4p75).
 
@@ -487,6 +517,17 @@ Live counts per system, rebuilt nightly from the same harvest:
 such as [Workday](https://glitchbound-jobs.pages.dev/workday/),
 [Greenhouse](https://glitchbound-jobs.pages.dev/greenhouse/) and
 [Oracle](https://glitchbound-jobs.pages.dev/oracle/).
+
+Longer write-ups on the pay each system publishes, and where it hides it:
+[Publix, General Atomics and Hobby Lobby on BrassRing](https://dev.to/glitchbound/publix-general-atomics-and-hobby-lobby-jobs-api-brassring-job-details-and-the-pay-questions-each-32i8) ·
+[Rippling, Carbon Health and Barry's on Rippling](https://dev.to/glitchbound/rippling-carbon-health-and-barrys-jobs-api-the-pay-in-each-jobs-own-record-one-location-at-a-45h3) ·
+[CommonSpirit Health, Crunch Fitness and The Joint: schema.org JobPosting](https://dev.to/glitchbound/commonspirit-health-crunch-fitness-and-the-joint-jobs-api-the-pay-in-a-job-pages-schemaorg-5d41) ·
+[BAE Systems, Honda and Dollar Tree on Phenom](https://dev.to/glitchbound/bae-systems-honda-and-dollar-tree-jobs-api-the-phenom-job-page-and-the-pay-fields-each-employer-2dfc) ·
+[Vail Resorts, Compass Group and Guitar Center: pay in the posting](https://dev.to/glitchbound/vail-resorts-compass-group-and-guitar-center-jobs-api-the-pay-is-in-the-posting-not-in-a-field-2ik3) ·
+[OpenAI, Ramp and Notion on Ashby](https://dev.to/glitchbound/openai-ramp-and-notion-jobs-api-the-ashby-job-board-api-and-the-pay-behind-one-flag-2bb8) ·
+[Dollar General, AutoZone and Macy's on Oracle](https://dev.to/glitchbound/dollar-general-autozone-and-macys-jobs-api-oracle-job-requisitions-and-the-pay-in-their-own-2d54) ·
+[Ford, Lockheed Martin and Northrop Grumman on Eightfold](https://dev.to/glitchbound/ford-lockheed-martin-and-northrop-grumman-jobs-api-eightfold-job-records-the-employers-link-and-2b4g) ·
+[Disney, Mastercard and T-Mobile on Workday](https://dev.to/glitchbound/disney-mastercard-and-t-mobile-jobs-api-the-pay-ranges-inside-workday-job-pages-13b7)
 
 Longer write-ups:
 [SpaceX, Anduril and Databricks on Greenhouse](https://dev.to/glitchbound/spacex-anduril-and-databricks-jobs-api-the-greenhouse-board-api-and-the-pay-ranges-it-hides-4hj6) ·

@@ -154,8 +154,8 @@ def adp_count_cap():
 BRASSRING = "https://sjobs.brassring.com"
 
 
-def brassring():
-    """Best Buy's BrassRing search: the page's cookie and token, then JSON."""
+def _brassring_search():
+    """Best Buy's BrassRing search: (opener, headers with the token, first page of jobs)."""
     import http.cookiejar
     jar = http.cookiejar.CookieJar()
     opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
@@ -166,14 +166,101 @@ def brassring():
         page = r.read().decode("utf-8", "replace")
     token = re.search(r'__RequestVerificationToken" type="hidden" value="([^"]*)', page)
     assert token, "no token on the search page"
+    h = dict(h, RFT=token.group(1), **{"Content-Type": "application/json"})
     body = {"PartnerId": "25632", "SiteId": "5649", "Keyword": "", "Location": "",
             "KeywordCustomSolrFields": "JobTitle", "LocationCustomSolrFields": "Location"}
     req = urllib.request.Request(
-        f"{BRASSRING}/TgNewUI/Search/Ajax/MatchedJobs", json.dumps(body).encode(),
-        dict(h, RFT=token.group(1), **{"Content-Type": "application/json"}))
+        f"{BRASSRING}/TgNewUI/Search/Ajax/MatchedJobs", json.dumps(body).encode(), h)
     with opener.open(req, timeout=60) as r:
-        d = json.loads(r.read())
+        return opener, h, json.loads(r.read())
+
+
+def brassring():
+    """Best Buy's BrassRing search: the page's cookie and token, then JSON."""
+    _, _, d = _brassring_search()
     return f"count {d['JobsCount']}, {rows(len(d['Jobs']['Job']))}"
+
+
+def brassring_details():
+    """One Best Buy job's details: the posting's sections and the pay questions."""
+    opener, h, d = _brassring_search()
+    job = d["Jobs"]["Job"][0]
+    reqid = next(q["Value"] for q in job["Questions"] if q.get("QuestionName") == "reqid")
+    time.sleep(1)
+    body = {"partnerId": "25632", "siteId": "5649", "jobid": reqid, "configMode": "",
+            "jobSiteId": "5649", "turnOffHttps": False}
+    req = urllib.request.Request(
+        f"{BRASSRING}/TgNewUI/Search/Ajax/JobDetails", json.dumps(body).encode(), h)
+    with opener.open(req, timeout=60) as r:
+        qs = json.loads(r.read())["ServiceResponse"]["Jobdetails"]["JobDetailQuestions"]
+    assert qs, "no JobDetailQuestions"
+    pay = [q["QuestionName"] for q in qs if re.search(r"pay|salar|rate", str(q.get("QuestionName")), re.I)]
+    return f"{len(qs)} questions, pay questions {pay}"
+
+
+def rippling_record():
+    """Barry's Rippling board: an entry per place, and each job's record has the pay."""
+    base = "https://api.rippling.com/platform/api/ats/v1/board/barrys-careers/jobs"
+    jobs = get_json(base)
+    uuids = {j["uuid"] for j in jobs}
+    assert len(uuids) < len(jobs), "the list no longer repeats a job per place"
+    time.sleep(1)
+    rec = get_json(f"{base}/{jobs[0]['uuid']}")
+    assert "payRangeDetails" in rec and isinstance(rec.get("description"), dict), \
+        "the record lost payRangeDetails or its two-part description"
+    return f"{len(jobs)} entries for {len(uuids)} jobs, record carries payRangeDetails"
+
+
+def bamboohr_record():
+    """A BambooHR job's own record: the date and the compensation line the list lacks."""
+    h = "https://eggharborcafe.bamboohr.com/careers"
+    first = get_json(f"{h}/list")["result"][0]["id"]
+    time.sleep(1)
+    job = get_json(f"{h}/{first}/detail")["result"]["jobOpening"]
+    assert "compensation" in job and job.get("datePosted"), "the record lost its date or pay line"
+    return f"datePosted {job['datePosted']}, compensation {job['compensation']!r}"
+
+
+def _job_posting(url):
+    """The schema.org JobPosting on a job page, or None."""
+    page = fetch(url)[1].decode("utf-8", "replace")
+    for blob in re.findall(r'<script type="application/ld\+json">(.*?)</script>', page, re.S):
+        try:
+            d = json.loads(blob, strict=False)
+        except ValueError:
+            continue
+        if isinstance(d, dict) and d.get("@type") == "JobPosting":
+            return d
+    return None
+
+
+def jazzhr():
+    """CentiMark's JazzHR board: an HTML list, a JobPosting on each job's page."""
+    status, raw = fetch("https://centimark.applytojob.com/apply")
+    assert status == 200, f"HTTP {status}"
+    links = re.findall(r'href="(https://centimark\.applytojob\.com/apply/[A-Za-z0-9]+/[^"]+)"',
+                       raw.decode("utf-8", "replace"))
+    assert links, "no job links on the board"
+    for url in dict.fromkeys(links[:5]):
+        time.sleep(1)
+        jp = _job_posting(url)
+        if jp:
+            return f"{len(set(links))} jobs listed, JobPosting dated {jp.get('datePosted')}"
+    raise AssertionError("no JobPosting on the first job pages")
+
+
+def radancy_pay():
+    """CommonSpirit Health's Radancy site fills baseSalary, unlike UnitedHealth's."""
+    status, raw = fetch("https://www.commonspirit.careers/sitemap.xml")
+    assert status == 200, f"sitemap HTTP {status}"
+    jobs = re.findall(r"<loc>([^<]*/job/[^<]*)</loc>", raw.decode("utf-8", "replace"))
+    assert jobs, "no job pages in the sitemap"
+    for url in jobs[:3]:
+        time.sleep(1)
+        value = ((_job_posting(url) or {}).get("baseSalary") or {}).get("value") or {}
+        if any(isinstance(value.get(k), (int, float)) for k in ("minValue", "maxValue", "value")):
+            return f"baseSalary {value.get('minValue')} - {value.get('maxValue')} {value.get('unitText')}"
+    raise AssertionError("no filled baseSalary on the first job pages")
 
 
 def radancy():
@@ -236,7 +323,12 @@ CHECKS = [
         ["data"]["positions"]))),
     ("SAP SuccessFactors", successfactors),
     ("BrassRing", brassring),
+    ("BrassRing details", brassring_details),
+    ("Rippling record", rippling_record),
+    ("BambooHR record", bamboohr_record),
+    ("JazzHR", jazzhr),
     ("Radancy", radancy),
+    ("Radancy pay", radancy_pay),
     ("Amazon", lambda: rows(len(get_json(
         "https://amazon.jobs/en/search.json?offset=0&result_limit=100&sort=recent&base_query=")
         ["jobs"]))),
